@@ -19,7 +19,7 @@ Currently, "BasicLogger_9250-bn220" is the most up to date code for the esp32. T
 - refactor existing visualization code to make gradient polylines much more simple to create
 - develop more standard visualizations
 - update the file ingestion to handle the mixed data - perhaps just another column in the datafram to say GPS or ACCEL, to later groupby
-- update the logic on detecting if datapoints are consequetive during the gradient logic - 
+- update the logic on detecting if datapoints are consequetive during the gradient logic - with 50 color levels in current data set, there is some issue causing loss of polylines for segments of ouellette
 
 ### Arduino
 - Create a calibration firmware which can be used with the device on the dash of the desired car, with the car being on as close to level ground as possible. The calibration values should then be written into the esp32 EEPROM such that the esp32, mpu9250, and specific vehicle mounting solution are tied together. If the device is never removed, calibration will never need to be redone.
