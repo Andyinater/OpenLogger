@@ -13,6 +13,28 @@ Currently, "BasicLogger_9250-bn220" is the most up to date code for the esp32. T
 - **3D printed housing:** In the "3D Files" folder, an stl for a housing I designed that is compatible with a widely-available go-pro clip mount is available. Any other custom mounting solution will do, as long as considerations specified in the readme for that folder are followed.
 
 
+## Connections
+
+### BNO055
+Vin - ESP_5V
+gnd - GND
+sda - ESP_GPIO_33
+scl - ESP_GPIO_32
+
+### BN220
+Vin - ESP_5V
+rx  - ESP_GPIO17
+tx  - ESP_GPIO16
+gnd - GND
+
+### MicroSD
+gnd - GND
+vcc - 5V
+Miso- ESP_GPIO19
+Mosi- ESP_GPIO23
+Sck - ESP_GPIO18
+CS  - ESP_GPIO5
+
 
 # ROADMAP
 
