@@ -3,6 +3,17 @@ An open source, esp32 datalogger for vehicles. This project is still in it's inf
 
 Currently, "BasicLogger_9250-bn220" is the most up to date code for the esp32. This is the proof of concept, which successfully reads sensors and writes data to a text file for later analysis.
 
+# How to setup
+
+## Parts list
+- **ESP32 microcontroller:** The 38 pin breakout was used and will be how connections are described.
+- **BN220 GPS module:** Beitian BN220 or equivalent is used. Serial utput has been set for the gps serial connection via a serial-to-usb cable and UBlox software. This will be covered in detail later
+- **BNO055 IMU:** Or equivalent motion sensor, however examples in this repo only exist for the MPU9250 and the BNO055 (current). Communication is done via IIC.
+- **Micro-SD Expansion board:** A standard breakout board was used. Specifically, an arduino board, so 5V is applied to the Vin to prevent dropout.
+- **3D printed housing:** In the "3D Files" folder, an stl for a housing I designed that is compatible with a widely-available go-pro clip mount is available. Any other custom mounting solution will do, as long as considerations specified in the readme for that folder are followed.
+
+
+
 # ROADMAP
 
 
