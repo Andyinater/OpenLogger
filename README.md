@@ -17,22 +17,34 @@ Currently, "BasicLogger_9250-bn220" is the most up to date code for the esp32. T
 
 ### BNO055
 Vin - ESP_5V
+
 gnd - GND
+
 sda - ESP_GPIO_33
+
 scl - ESP_GPIO_32
+
 
 ### BN220
 Vin - ESP_5V
+
 rx  - ESP_GPIO17
+
 tx  - ESP_GPIO16
+
 gnd - GND
 
 ### MicroSD
 gnd - GND
+
 vcc - 5V
+
 Miso- ESP_GPIO19
+
 Mosi- ESP_GPIO23
+
 Sck - ESP_GPIO18
+
 CS  - ESP_GPIO5
 
 
