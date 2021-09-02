@@ -20,15 +20,28 @@ HardwareSerial GPSSerial(1); //bn220 serial object
 //BNO055 Sample Rate
 uint16_t BNO055_SAMPLERATE_DELAY_MS = 10;
 
+// Runtime Variables
+String logName;
+boolean gpsLock = false;
+const byte ledPin = 27;
+unsigned long ledFlashLength = 200;
+unsigned long touchFlashLength = 50;
+unsigned long lastFlash;
+boolean ledOn = false;
+boolean pinTouch = false;
+unsigned long lastTouch;
 
 void setup() {
   Serial.begin(115200);
+  delay(10000);
+  // LED pin
+  pinMode(ledPin, OUTPUT);
 
   // pin 16 is rx, pin 17 is tx, on the esp. feed gps in appropriately (38 pin esp)
   GPSSerial.begin(115200, SERIAL_8N1, 16, 17);
   
   // init the mpu
-  Serial.begin(115200);
+//  Serial.begin(115200);
   Serial.println("Orientation Sensor Test"); Serial.println("");
 
   /* Initialise the sensor */
@@ -68,10 +81,72 @@ void setup() {
 
 
 //   initialize log file, to be parameterized
-  writeFile(SD,"/log1.txt","ax,ay,az");
+  String curNum = "";
+  String temp;
+  File root = SD.open("/");
+  int highestLog = 1;
+  while (true) {
+    File entry = root.openNextFile();
+    Serial.print("huh");Serial.println(entry.name());
+    if (! entry) {
+      // no more files
+      if (highestLog > curNum.toInt()) {
+        temp = "/log"+String(highestLog)+".txt";
+        Serial.print(temp);
+        writeFile(SD,temp.c_str(),"rx,ry,rz,ax,ay,az,longDir,x2,x3,x4,x5,x6,x7,x8,x9,x10,x11,x12,x13,x14,x15");
+      } else {
+        temp = "/log"+curNum+".txt";
+        Serial.print(temp);
+        writeFile(SD,temp.c_str(),"rx,ry,rz,ax,ay,az,longDir,x2,x3,x4,x5,x6,x7,x8,x9,x10,x11,x12,x13,x14,x15");
+      }
+      break;
+    }
+    if (entry.isDirectory()) {
+      continue;
+    } else {
+      String curName = entry.name();
+      Serial.print(curName);
+      if (curName.indexOf("log") != 0){
+        int ind1 = curName.indexOf("g") + 1;
+        curNum = "";
+        for (int i = ind1; i < curName.indexOf("."); i++){
+          curNum += curName[i];
+        }
+        Serial.print("curNum:");Serial.println(curNum);
+        Serial.println(curNum.toInt());
+        highestLog += 1;
+        continue;
+      }
+    }
+  }
+  logName = temp;
+  Serial.print(logName);
+  delay(1000);
+//  writeFile(SD,"/log1.txt","ax,ay,az");
 }
 
 void loop() {
+  // Check if being touched
+  if (pinTouch == false && touchRead(15) < 10){
+    lastTouch = millis();
+    pinTouch = true;
+    lastFlash = millis();
+  }
+  if (pinTouch){
+    if(ledOn && millis() - lastFlash > touchFlashLength){
+      ledOn = false;
+      lastFlash = millis();
+      digitalWrite(ledPin, LOW);
+    } else if (ledOn == false && millis() - lastFlash > touchFlashLength){
+      lastFlash = millis();
+      ledOn = true;
+      digitalWrite(ledPin, HIGH);
+    }
+    if (touchRead(15) > 50){
+      pinTouch = false;
+      lastTouch = millis();
+    }
+  }
 
   // collect mpu data
   //could add VECTOR_ACCELEROMETER, VECTOR_MAGNETOMETER,VECTOR_GRAVITY...
@@ -84,17 +159,28 @@ void loop() {
   BNO_DATA += getEventData(&linearAccelData);
   
   // write mpu data
-  writeAccelData(SD,"/log1.txt",BNO_DATA);
+  writeAccelData(SD,logName.c_str(),BNO_DATA);
 
   // set gps flags and variables
   boolean GpsDataReady = false;
   String gpsBuff = "";
+  int commaCount = 0;
 
   // while there are bytes to read
   while(GPSSerial.available() > 0){
     // add bytes to data line
     char dLine = char(GPSSerial.read());
     gpsBuff.concat(dLine);
+    if(dLine == ','){
+      commaCount ++;
+    } else if(commaCount == 18) { // if at the commaCount for the first time
+      if(dLine == '0'){
+        gpsLock = false; 
+      } else {
+        gpsLock = true;
+      }
+      commaCount = 1000; // set comma count way out, only check first char after 18th comma
+    }
 
     // set data ready flag
     GpsDataReady = true;
@@ -107,8 +193,31 @@ void loop() {
     GpsDataReady = false;
 
     // write the data
-    writeGpsData(SD,"/log1.txt",gpsBuff);
+    writeGpsData(SD,logName.c_str(),gpsBuff);
   }
+
+  // do LED logic
+ if(gpsLock){
+  if (pinTouch == false) {
+    digitalWrite(ledPin, HIGH); 
+  }
+ } else{
+  if (pinTouch == false) {
+    digitalWrite(ledPin, LOW);
+  }
+ }
+
+ if(millis() - lastFlash >= ledFlashLength && pinTouch == false){
+  if(ledOn){
+    ledOn = false;
+    digitalWrite(ledPin, LOW);
+  } else{
+    ledOn = true;
+    digitalWrite(ledPin,HIGH);
+  }
+  lastFlash = millis();
+ }
+ 
 }
 
 
