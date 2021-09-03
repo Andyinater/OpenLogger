@@ -19,7 +19,7 @@
   <div class="topnav">
     <h1><i class="far fa-compass"></i> MPU6050 <i class="far fa-compass"></i></h1>
   </div>
-  <input type="button" value="Reset Position" id="reset" onclick="resetPosition()"/>
+  
   <div class="content">
     <div class="cards">
       <div class="card">
@@ -42,21 +42,26 @@
         <p><span class="reading">Z: <span id="accZ"></span> ms<sup>2</sup></span></p>
       </div>
 	  
-      
+      <div class="card">
 	  <!--
-	  <div class="card">
+	  
         <p class="card-title">TEMPERATURE</p>
         <p><span class="reading"><span id="temp"></span> &deg;C</span></p>
         <p class="card-title">3D ANIMATION</p>
 		-->
-        
+        <input type="button" value="Reset Position" id="reset" onclick="resetPosition()"/><br>
+		
+		<input type="radio" id="forwardRadio" name="startingOrientation" value="1"/>Forward
+		
+		<input type="radio" id="reverseRadio" name="startingOrientation" value="0"/>Reverse
+		
 		<!--
         <button id="resetX" onclick="resetPosition(this)">X</button>
         <button id="resetY" onclick="resetPosition(this)">Y</button>
         <button id="resetZ" onclick="resetPosition(this)">Z</button>
-		</div>
+		
 		-->
-      
+      </div>
 	  
     </div>
     <div class="cube-content">

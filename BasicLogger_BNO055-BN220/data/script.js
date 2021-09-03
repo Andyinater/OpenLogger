@@ -308,6 +308,7 @@ function resetPosition(){
   //xhr.open("GET", "/"+element.id, true);
   //console.log(element.id);
   //xhr.send();
+  
   beenReset = true;
   
   var calibQuat = new THREE.Quaternion();
@@ -317,8 +318,26 @@ function resetPosition(){
   calibQuat.set(-1*rqx,-1*rqy,-1*rqz,rqw);
   //calibQuat.set(rqx,rqy,rqz,rqw);
   calibQuat.normalize();
+  document.getElementById("gyroX").innerHTML = 67;
+  var checkAns = document.querySelector('input[name = "startingOrientation"]:checked').value;
+  document.getElementById("gyroX").innerHTML = 67.25;
+  document.getElementById("gyroX").innerHTML = true;
+  document.getElementById("gyroY").innerHTML = checkAns;
+  document.getElementById("gyroX").innerHTML = 67.5;
   
-  var standardQuat = new THREE.Quaternion(0,0,0,1);
+  
+  if (checkAns == 1){
+	  document.getElementById("gyroX").innerHTML = 66;
+	  var standardQuat = new THREE.Quaternion(0,0,0,1);
+	  
+  } 
+  else {
+	  document.getElementById("gyroX").innerHTML = 65;
+	  var standardQuat = new THREE.Quaternion(0,1,0,0);
+	  
+  } 
+  
+  //var standardQuat = new THREE.Quaternion(0,0,0,1);
   document.getElementById("gyroX").innerHTML = 68;
   document.getElementById("gyroY").innerHTML = resetQuat.y;
   document.getElementById("gyroZ").innerHTML = calibQuat.z;
