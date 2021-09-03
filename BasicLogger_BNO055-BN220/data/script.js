@@ -6,7 +6,7 @@
   The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 */
 
-let scene, camera, rendered, cube, resetQuat, rqx, rqy, rqz, rqw;
+let scene, camera, rendered, cube, resetQuat, rqx, rqy, rqz, rqw, beenReset;
 
 function parentWidth(elem) {
   return elem.parentElement.clientWidth;
@@ -185,6 +185,7 @@ function init3D(){
   cube = new THREE.Mesh(firstgeometry, firstmaterial);
   scene.add(cube);
   
+  beenReset = false;
   resetQuat = new THREE.Quaternion(0,0,0,1);
   rqx = 0;
   rqy = 0;
@@ -267,7 +268,12 @@ if (!!window.EventSource) {
 	
 	//var q2 = new THREE.Quaternion(1,0,0,0);
 	//cube.quaternion.multiplyQuaternions(q,q2);
-	cube.quaternion.multiplyQuaternions(resetQuat,q);
+	if (beenReset) {
+		cube.quaternion.multiplyQuaternions(resetQuat,q);
+	} else {
+		cube.quaternion.copy(q)
+	}
+	//cube.quaternion.multiplyQuaternions(resetQuat,q);
 	cube.quaternion.normalize();
 	//q.normalize();
 	//cube.rotation.setFromQuaternion(q);
@@ -302,6 +308,7 @@ function resetPosition(){
   //xhr.open("GET", "/"+element.id, true);
   //console.log(element.id);
   //xhr.send();
+  beenReset = true;
   
   var calibQuat = new THREE.Quaternion();
   
@@ -311,7 +318,7 @@ function resetPosition(){
   //calibQuat.set(rqx,rqy,rqz,rqw);
   calibQuat.normalize();
   
-  var standardQuat = new THREE.Quaternion(0,1,0,0);
+  var standardQuat = new THREE.Quaternion(0,0,0,1);
   document.getElementById("gyroX").innerHTML = 68;
   document.getElementById("gyroY").innerHTML = resetQuat.y;
   document.getElementById("gyroZ").innerHTML = calibQuat.z;
