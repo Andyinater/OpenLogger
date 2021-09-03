@@ -111,10 +111,10 @@ function init3D(){
   //camera = new THREE.OrthographicCamera(-20, 20, 30, -30, 0.1, 1000);
   camera.position.z = 5;
 	// Set up lights
-	/*
+	
 	const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
 	scene.add(ambientLight);
-
+	/*
 	const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
 	dirLight.position.set(200, 500, 300);
 	scene.add(dirLight);
@@ -144,12 +144,12 @@ function init3D(){
 
   // Materials of each face
   var cubeMaterials = [
-    new THREE.MeshBasicMaterial({color:0x03045e}),
-    new THREE.MeshBasicMaterial({color:0x023e8a}),
-    new THREE.MeshBasicMaterial({color:0x0077b6}),
-    new THREE.MeshBasicMaterial({color:0x03045e}),
-    new THREE.MeshBasicMaterial({color:0x023e8a}),
-    new THREE.MeshBasicMaterial({color:0x0077b6}),
+    new THREE.MeshBasicMaterial({color:0xff0000}),
+    new THREE.MeshBasicMaterial({color:0xffea00}),
+    new THREE.MeshBasicMaterial({color:0x2fff00}),
+    new THREE.MeshBasicMaterial({color:0x00fff7}),
+    new THREE.MeshBasicMaterial({color:0x001eff}),
+    new THREE.MeshBasicMaterial({color:0xff00ff}),
   ];
 
   const firstmaterial = new THREE.MeshFaceMaterial(cubeMaterials);
@@ -267,7 +267,8 @@ if (!!window.EventSource) {
 	
 	//var q2 = new THREE.Quaternion(1,0,0,0);
 	//cube.quaternion.multiplyQuaternions(q,q2);
-	cube.quaternion.multiplyQuaternions(q,resetQuat);
+	cube.quaternion.multiplyQuaternions(resetQuat,q);
+	cube.quaternion.normalize();
 	//q.normalize();
 	//cube.rotation.setFromQuaternion(q);
 	//cube.quaternion.set(obj.quatX, obj.quatY, obj.quatZ, obj.quatW);
@@ -304,15 +305,25 @@ function resetPosition(){
   
   var calibQuat = new THREE.Quaternion();
   
-  //calibQuat.set(cube.quaternion.x,cube.quaternion.y,cube.quaternion.z,cube.quaternion.w);
-  calibQuat.set(rqx,rqy,rqz,rqw);
   
-  var standardQuat = new THREE.Quaternion(0,0,0,1);
+  //calibQuat.set(cube.quaternion.x,cube.quaternion.y,cube.quaternion.z,cube.quaternion.w);
+  calibQuat.set(-1*rqx,-1*rqy,-1*rqz,rqw);
+  //calibQuat.set(rqx,rqy,rqz,rqw);
+  calibQuat.normalize();
+  
+  var standardQuat = new THREE.Quaternion(0,1,0,0);
   document.getElementById("gyroX").innerHTML = 68;
   document.getElementById("gyroY").innerHTML = resetQuat.y;
   document.getElementById("gyroZ").innerHTML = calibQuat.z;
-  resetQuat = new THREE.Quaternion(0,0,0,1);
-  resetQuat.multiplyQuaternions(standardQuat,calibQuat.conjugate());
+  //resetQuat = new THREE.Quaternion(0,0,0,1);
+  resetQuat = new THREE.Quaternion();
+  
+  //calibQuat.invert();
+  resetQuat.multiplyQuaternions(standardQuat, calibQuat);
+  
+  
+  //resetQuat.multiplyQuaternions(calibQuat,standardQuat);
+  resetQuat.normalize();
   //resetQuat.multiplyQuaternions(standardQuat, calibQuat.inverse());
   document.getElementById("gyroX").innerHTML = 69;
   document.getElementById("gyroX").innerHTML = resetQuat.x;
