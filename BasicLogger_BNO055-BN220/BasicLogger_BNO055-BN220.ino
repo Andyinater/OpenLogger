@@ -346,6 +346,10 @@ void loop() {
     }
     lastFlash = millis();
    }
+    displayCalStatus();
+    Serial.println("");
+  
+   
   } 
   else if (deviceMode == 1){
     // Server Control
@@ -380,15 +384,15 @@ void loop() {
         // Setup Visualization Server
         initSPIFFS();
 
-//        WiFi.mode(WIFI_OFF);
-//        WiFi.mode(WIFI_STA);
-//        WiFi.begin("HomeWifi","windsorontario");
-//        while (WiFi.status() != WL_CONNECTED) {
-//          Serial.print(".");
-//          delay(1000);
-//        }
-//        Serial.println("");
-//        Serial.println(WiFi.localIP());
+        WiFi.mode(WIFI_OFF);
+        WiFi.mode(WIFI_STA);
+        WiFi.begin("HomeWifi","windsorontario");
+        while (WiFi.status() != WL_CONNECTED) {
+          Serial.print(".");
+          delay(1000);
+        }
+        Serial.println("");
+        Serial.println(WiFi.localIP());
 
 
         // Handle Web Server
@@ -511,7 +515,8 @@ void loop() {
     
     if ((millis() - lastTime) > gyroDelay) {
       // Send Events to the Web Server with the Sensor Readings
-      events.send(getBNOReadings(&orientationData).c_str(),"gyro_readings",millis());
+//      events.send(getBNOReadings(&orientationData).c_str(),"gyro_readings_euler",millis());
+      events.send(getBNOQuats().c_str(),"gyro_readings_quat",millis());
       lastTime = millis();
     }
     if ((millis() - lastTimeAcc) > accelerometerDelay) {
@@ -1243,7 +1248,16 @@ void initSPIFFS() {
   Serial.println("SPIFFS mounted successfully");
 }
 
+String getBNOQuats(){
+  imu::Quaternion quat = bno.getQuat();
+  readings["quatW"] = String(quat.w());
+  readings["quatX"] = String(quat.x());
+  readings["quatY"] = String(quat.y());
+  readings["quatZ"] = String(quat.z());
 
+  String jsonString = JSON.stringify(readings);
+  return jsonString;
+}
 
 String getBNOReadings(sensors_event_t* event) {
   double x = -1000000, y = -1000000 , z = -1000000; //dumb values, easy to spot problem
@@ -1320,4 +1334,31 @@ String getTemperature(){
   // mpu.getEvent(&a, &g, &temp);
   int temperature = 69; // temp.temperature;
   return String(temperature);
+}
+
+void displayCalStatus(void)
+{
+  /* Get the four calibration values (0..3) */
+  /* Any sensor data reporting 0 should be ignored, */
+  /* 3 means 'fully calibrated" */
+  uint8_t system, gyro, accel, mag;
+  system = gyro = accel = mag = 0;
+  bno.getCalibration(&system, &gyro, &accel, &mag);
+
+  /* The data should be ignored until the system calibration is > 0 */
+  Serial.print("\t");
+  if (!system)
+  {
+    Serial.print("! ");
+  }
+
+  /* Display the individual values */
+  Serial.print("Sys:");
+  Serial.print(system, DEC);
+  Serial.print(" G:");
+  Serial.print(gyro, DEC);
+  Serial.print(" A:");
+  Serial.print(accel, DEC);
+  Serial.print(" M:");
+  Serial.print(mag, DEC);
 }
