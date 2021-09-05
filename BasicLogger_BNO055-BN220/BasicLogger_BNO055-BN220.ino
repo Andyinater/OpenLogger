@@ -102,7 +102,7 @@ unsigned long lastTimeTemperature = 0;
 unsigned long lastTimeAcc = 0;
 unsigned long gyroDelay = 10;
 unsigned long temperatureDelay = 1000;
-unsigned long accelerometerDelay = 100;
+unsigned long accelerometerDelay = 15;
 
 
 // declare the BNO055 object

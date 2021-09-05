@@ -6,7 +6,7 @@
   The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 */
 
-let scene, camera, rendered, cube, resetQuat, rqx, rqy, rqz, rqw, beenReset, beenSaved, perfectQuat, imperfectQuat, standardQuat, calibQuat, perfectQuatInv, imperfectQuatInv;
+let scene, camera, rendered, cube, resetQuat, rqx, rqy, rqz, rqw, beenReset, beenSaved, perfectQuat, imperfectQuat, standardQuat, calibQuat, perfectQuatInv, imperfectQuatInv, ax, ay, az;
 
 function parentWidth(elem) {
   return elem.parentElement.clientWidth;
@@ -194,6 +194,9 @@ function init3D(){
   rqy = 0;
   rqz = 0;
   rqw = 0;
+  ax = 0;
+  ay = 0;
+  az = 0;
   
   /*cube = createCar();
   scene.add(cube);
@@ -274,6 +277,8 @@ if (!!window.EventSource) {
 	if (beenReset) {
 		// start visualization off in perfect orientation https://stackoverflow.com/questions/25149231/how-do-you-rotate-2-quaternions-back-to-starting-position-and-then-calculate-the
 		
+		// Reorient such that rotations are shown on the standard view as inferred by the device and correct by the mounting orientation vs "perfect"
+		
 		cube.quaternion.copy(standardQuat);
 		
 		cube.quaternion.multiply(imperfectQuatInv);
@@ -295,24 +300,14 @@ if (!!window.EventSource) {
 		cube.quaternion.multiply(offsetQInv);
 		cube.quaternion.normalize();
 		
-		// ABOVE IS WORKING BUT VISUAL IS NOT ZEROED
-		/*
-		if (beenSaved == false){
-			var savedQuat = new THREE.Quaternion();
-			savedQuat.copy(cube.quaternion);
-			
-			var savedQatInv = new THREE.Quaternion();
-			savedQatInv.copy(savedQuat);
-			
-			beenSaved = true;
-		}
+		// Do the same as above but for the x,y,z accelerations
+		var imuAccel = new THREE.Vector3(ax,ay,az);
+		imuAccel.applyQuaternion(offsetQInv);
+		document.getElementById("accX").innerHTML = imuAccel.x.toFixed(3);
+		document.getElementById("accY").innerHTML = imuAccel.y.toFixed(3);
+		document.getElementById("accZ").innerHTML = imuAccel.z.toFixed(3);
 		
 		
-		cube.quaternion.premultiply(savedQatInv);
-		cube.quaternion.normalize();
-		
-		cube.premultiply(standardQuat);
-		*/
 		
 	} else {
 		cube.quaternion.copy(q)
@@ -341,9 +336,12 @@ if (!!window.EventSource) {
   source.addEventListener('accelerometer_readings', function(e) {
     console.log("accelerometer_readings", e.data);
     var obj = JSON.parse(e.data);
-    document.getElementById("accX").innerHTML = obj.accX;
-    document.getElementById("accY").innerHTML = obj.accY;
-    document.getElementById("accZ").innerHTML = obj.accZ;
+    //document.getElementById("accX").innerHTML = obj.accX;
+    //document.getElementById("accY").innerHTML = obj.accY;
+    //document.getElementById("accZ").innerHTML = obj.accZ;
+	ax = obj.accX;
+	ay = obj.accY;
+	az = obj.accZ;
   }, false);
 }
 
