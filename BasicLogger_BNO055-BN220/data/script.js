@@ -189,6 +189,7 @@ function init3D(){
   imperfectQuat = new THREE.Quaternion();
   beenReset = false;
   resetQuat = new THREE.Quaternion(0,0,0,1);
+  beenSaved = false;
   rqx = 0;
   rqy = 0;
   rqz = 0;
@@ -281,7 +282,7 @@ if (!!window.EventSource) {
 		cube.quaternion.normalize();
 		
 		var offsetQ = new THREE.Quaternion();
-		offsetQ.multiplyQuaternions(imperfectQuat,perfectQuatInv);
+		offsetQ.multiplyQuaternions(perfectQuatInv,imperfectQuat);
 		offsetQ.normalize();
 		
 		var offsetQInv = new THREE.Quaternion();
@@ -295,8 +296,8 @@ if (!!window.EventSource) {
 		cube.quaternion.normalize();
 		
 		// ABOVE IS WORKING BUT VISUAL IS NOT ZEROED
-		
-		if (!beenSaved){
+		/*
+		if (beenSaved == false){
 			var savedQuat = new THREE.Quaternion();
 			savedQuat.copy(cube.quaternion);
 			
@@ -311,6 +312,8 @@ if (!!window.EventSource) {
 		cube.quaternion.normalize();
 		
 		cube.premultiply(standardQuat);
+		*/
+		
 	} else {
 		cube.quaternion.copy(q)
 	}
