@@ -118,7 +118,7 @@ uint16_t BNO055_SAMPLERATE_DELAY_MS = 10;
 String logName;
 boolean gpsLock = false;
 const byte ledPin = 27;
-unsigned long ledFlashLength = 200;
+unsigned long ledFlashLength = 300;
 unsigned long touchFlashLength = 50;
 unsigned long serverFlashLength = 85;
 unsigned long server2FlashLength = 135;
@@ -335,8 +335,20 @@ void loop() {
         lastTouch = millis();
 
         // Start server with onetime run code
-        WiFi.softAP(ssid,password);
-        Serial.println();
+//      WiFi.softAP(ssid,password);
+//      Serial.println();
+
+        WiFi.mode(WIFI_OFF);
+        WiFi.mode(WIFI_STA);
+        delay(1000);
+        WiFi.begin("HomeWifi","windsorontario");
+        while (WiFi.status() != WL_CONNECTED) {
+          Serial.print(".");
+          delay(1000);
+        }
+        Serial.println("");
+        Serial.println(WiFi.localIP());
+        
         server.on("/", []() {
           handleRoot();
         });
@@ -356,6 +368,8 @@ void loop() {
         Serial.println();
       
         Serial.println("Initialization done.");
+        pinTouch = false;
+        lastTouch = millis();
         return;
       }
       if(ledOn && millis() - lastFlash > touchFlashLength){
@@ -442,8 +456,8 @@ void loop() {
     }
     lastFlash = millis();
    }
-    displayCalStatus();
-    Serial.println("");
+    //displayCalStatus();
+    //Serial.println("");
   
    
   } 

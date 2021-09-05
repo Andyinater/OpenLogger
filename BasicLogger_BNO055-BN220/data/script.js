@@ -6,7 +6,7 @@
   The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 */
 
-let scene, camera, rendered, cube, resetQuat, rqx, rqy, rqz, rqw, beenReset;
+let scene, camera, rendered, cube, resetQuat, rqx, rqy, rqz, rqw, beenReset, beenSaved, perfectQuat, imperfectQuat, standardQuat, calibQuat, perfectQuatInv, imperfectQuatInv;
 
 function parentWidth(elem) {
   return elem.parentElement.clientWidth;
@@ -185,6 +185,8 @@ function init3D(){
   cube = new THREE.Mesh(firstgeometry, firstmaterial);
   scene.add(cube);
   
+  perfectQuat = new THREE.Quaternion();
+  imperfectQuat = new THREE.Quaternion();
   beenReset = false;
   resetQuat = new THREE.Quaternion(0,0,0,1);
   rqx = 0;
@@ -269,7 +271,46 @@ if (!!window.EventSource) {
 	//var q2 = new THREE.Quaternion(1,0,0,0);
 	//cube.quaternion.multiplyQuaternions(q,q2);
 	if (beenReset) {
-		cube.quaternion.multiplyQuaternions(resetQuat,q);
+		// start visualization off in perfect orientation https://stackoverflow.com/questions/25149231/how-do-you-rotate-2-quaternions-back-to-starting-position-and-then-calculate-the
+		
+		cube.quaternion.copy(standardQuat);
+		
+		cube.quaternion.multiply(imperfectQuatInv);
+		cube.quaternion.normalize();
+		cube.quaternion.multiply(q);
+		cube.quaternion.normalize();
+		
+		var offsetQ = new THREE.Quaternion();
+		offsetQ.multiplyQuaternions(imperfectQuat,perfectQuatInv);
+		offsetQ.normalize();
+		
+		var offsetQInv = new THREE.Quaternion();
+		offsetQInv.copy(offsetQ);
+		offsetQInv.conjugate();
+		offsetQInv.normalize();
+		
+		cube.quaternion.premultiply(offsetQ);
+		cube.quaternion.normalize();
+		cube.quaternion.multiply(offsetQInv);
+		cube.quaternion.normalize();
+		
+		// ABOVE IS WORKING BUT VISUAL IS NOT ZEROED
+		
+		if (!beenSaved){
+			var savedQuat = new THREE.Quaternion();
+			savedQuat.copy(cube.quaternion);
+			
+			var savedQatInv = new THREE.Quaternion();
+			savedQatInv.copy(savedQuat);
+			
+			beenSaved = true;
+		}
+		
+		
+		cube.quaternion.premultiply(savedQatInv);
+		cube.quaternion.normalize();
+		
+		cube.premultiply(standardQuat);
 	} else {
 		cube.quaternion.copy(q)
 	}
@@ -303,6 +344,30 @@ if (!!window.EventSource) {
   }, false);
 }
 
+function storePerfect(){
+	perfectQuatInv = new THREE.Quaternion(rqx, rqy, rqz, rqw);
+	perfectQuat = new THREE.Quaternion();
+	perfectQuat.copy(perfectQuatInv); //store before inversing
+	perfectQuat.normalize();
+	
+	perfectQuatInv.conjugate();
+	perfectQuatInv.normalize();
+	
+}
+
+function storeImperfect(){
+	imperfectQuatInv = new THREE.Quaternion(rqx, rqy, rqz, rqw);
+	imperfectQuat = new THREE.Quaternion();
+	imperfectQuat.copy(imperfectQuatInv);
+	imperfectQuat.normalize();
+	
+	imperfectQuatInv.conjugate();
+	imperfectQuatInv.normalize();
+	
+	resetPosition();
+}
+
+
 function resetPosition(){
   //var xhr = new XMLHttpRequest();
   //xhr.open("GET", "/"+element.id, true);
@@ -311,7 +376,7 @@ function resetPosition(){
   
   beenReset = true;
   
-  var calibQuat = new THREE.Quaternion();
+  calibQuat = new THREE.Quaternion();
   
   
   //calibQuat.set(cube.quaternion.x,cube.quaternion.y,cube.quaternion.z,cube.quaternion.w);
@@ -328,12 +393,12 @@ function resetPosition(){
   
   if (checkAns == 1){
 	  document.getElementById("gyroX").innerHTML = 66;
-	  var standardQuat = new THREE.Quaternion(0,0,0,1);
+	  standardQuat = new THREE.Quaternion(0,0,0,1);
 	  
   } 
   else {
 	  document.getElementById("gyroX").innerHTML = 65;
-	  var standardQuat = new THREE.Quaternion(0,1,0,0);
+	  standardQuat = new THREE.Quaternion(0,1,0,0);
 	  
   } 
   
