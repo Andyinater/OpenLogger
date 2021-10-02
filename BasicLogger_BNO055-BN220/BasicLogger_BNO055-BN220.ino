@@ -194,11 +194,11 @@ void setup() {
       if (highestLog > curNum.toInt()) {
         temp = "/log"+String(highestLog)+".txt";
         Serial.print(temp);
-        writeFile(SD,temp.c_str(),"rx,ry,rz,ax,ay,az,longDir,x2,x3,x4,x5,x6,x7,x8,x9,x10,x11,x12,x13,x14,x15");
+        writeFile(SD,temp.c_str(),"rx,ry,rz,ax,ay,az,longDir,x2,x3,x4,x5,x6,x7,x8,x9,x10,x11,x12,x13,x14,x15,x16");
       } else {
         temp = "/log"+curNum+".txt";
         Serial.print(temp);
-        writeFile(SD,temp.c_str(),"rx,ry,rz,ax,ay,az,longDir,x2,x3,x4,x5,x6,x7,x8,x9,x10,x11,x12,x13,x14,x15");
+        writeFile(SD,temp.c_str(),"rw,rx,ry,rz,ax,ay,az,longDir,x2,x3,x4,x5,x6,x7,x8,x9,x10,x11,x12,x13,x14,x15,x16");
       }
       break;
     }
@@ -342,9 +342,20 @@ void loop() {
         WiFi.mode(WIFI_STA);
         delay(1000);
         WiFi.begin("HomeWifi","windsorontario");
+        int dcCount = 0;
         while (WiFi.status() != WL_CONNECTED) {
           Serial.print(".");
           delay(1000);
+          
+          dcCount ++;
+          if(dcCount > 10){
+            WiFi.mode(WIFI_OFF);
+            WiFi.mode(WIFI_STA);
+            delay(1000);
+            WiFi.begin("HomeWifi","windsorontario");
+            dcCount = 0;
+          }
+          
         }
         Serial.println("");
         Serial.println(WiFi.localIP());
@@ -386,15 +397,27 @@ void loop() {
         lastTouch = millis();
       }
     }
-  
+
+    //-------------------------------Logging Logic----------------------------------
     // collect mpu data
     //could add VECTOR_ACCELEROMETER, VECTOR_MAGNETOMETER,VECTOR_GRAVITY...
     sensors_event_t orientationData , angVelocityData , linearAccelData, magnetometerData, accelerometerData, gravityData;
     bno.getEvent(&orientationData, Adafruit_BNO055::VECTOR_EULER);
     bno.getEvent(&linearAccelData, Adafruit_BNO055::VECTOR_LINEARACCEL);
     String BNO_DATA = "";
-    BNO_DATA += getEventData(&orientationData);
+    imu::Quaternion logQuat = bno.getQuat();
+    BNO_DATA += String(micros());
     BNO_DATA += ",";
+    BNO_DATA += String(logQuat.w());
+    BNO_DATA += ",";
+    BNO_DATA += String(logQuat.x());
+    BNO_DATA += ",";
+    BNO_DATA += String(logQuat.y());
+    BNO_DATA += ",";
+    BNO_DATA += String(logQuat.z());
+    BNO_DATA += ",";
+    //BNO_DATA += getEventData(&orientationData);
+    //BNO_DATA += ",";
     BNO_DATA += getEventData(&linearAccelData);
     
     // write mpu data
@@ -403,23 +426,31 @@ void loop() {
     // set gps flags and variables
     boolean GpsDataReady = false;
     String gpsBuff = "";
-    int commaCount = 0;
+
   
     // while there are bytes to read
     while(GPSSerial.available() > 0){
       // add bytes to data line
-      char dLine = char(GPSSerial.read());
-      gpsBuff.concat(dLine);
-      if(dLine == ','){
-        commaCount ++;
-      } else if(commaCount == 18) { // if at the commaCount for the first time
-        if(dLine == '0'){
-          gpsLock = false; 
-        } else {
-          gpsLock = true;
-        }
-        commaCount = 1000; // set comma count way out, only check first char after 18th comma
+      String dLine = GPSSerial.readStringUntil('\n');
+      String GPSTime = String(micros());
+      int dumbComma;
+      dumbComma = dLine.lastIndexOf(',');
+      dumbComma = dLine.lastIndexOf(',',dumbComma);
+      dumbComma = dLine.lastIndexOf(',',dumbComma);
+      int gpsNum = dLine.charAt(dumbComma + 1);
+      
+      gpsBuff = dLine;
+      gpsBuff.trim();
+      gpsBuff += ",";
+      gpsBuff += GPSTime;
+      gpsBuff += "\r\n";
+      
+      if(gpsNum == '0'){
+        gpsLock = false; 
+      } else {
+        gpsLock = true;
       }
+      
   
       // set data ready flag
       GpsDataReady = true;
@@ -434,6 +465,10 @@ void loop() {
       // write the data
       writeGpsData(SD,logName.c_str(),gpsBuff);
     }
+
+
+//----------------------------------------------------------------
+
   
     // do LED logic
    if(gpsLock){
@@ -466,12 +501,13 @@ void loop() {
     server.handleClient();
     
     // Blink Control
-    Serial.println("WEBSERVER,FILES");
+    
     if (ledOn){
       if (millis() - lastFlash > serverFlashLength){
         digitalWrite(ledPin,LOW);
         lastFlash = millis();
         ledOn = false;
+        Serial.println("WEBSERVER,FILES");
       }
     } else {
       if (millis() - lastFlash > serverFlashLength){
@@ -494,13 +530,18 @@ void loop() {
         // Setup Visualization Server
         initSPIFFS();
 
-        WiFi.mode(WIFI_OFF);
-        WiFi.mode(WIFI_STA);
-        WiFi.begin("HomeWifi","windsorontario");
-        while (WiFi.status() != WL_CONNECTED) {
-          Serial.print(".");
-          delay(1000);
-        }
+//        WiFi.mode(WIFI_OFF);
+//        WiFi.mode(WIFI_STA);
+//        WiFi.begin("HomeWifi","windsorontario");
+//        while (WiFi.status() != WL_CONNECTED) {
+//          Serial.print(".");
+//          delay(1000);
+//        }
+
+      WiFi.softAP(ssid,password);
+      Serial.println();
+
+
         Serial.println("");
         Serial.println(WiFi.localIP());
 
@@ -511,6 +552,46 @@ void loop() {
         });
       
         server2.serveStatic("/", SPIFFS, "/");
+
+        server2.on("/storePerfect", HTTP_GET, [](AsyncWebServerRequest *request){
+//          sensors_event_t orientationData , angVelocityData , linearAccelData, magnetometerData, accelerometerData, gravityData;
+//          bno.getEvent(&orientationData, Adafruit_BNO055::VECTOR_EULER);
+//          bno.getEvent(&linearAccelData, Adafruit_BNO055::VECTOR_LINEARACCEL);
+          
+          imu::Quaternion perfQuat = bno.getQuat();
+          String perfData = "";
+          perfData += String(perfQuat.w());
+          perfData += ",";
+          perfData += String(perfQuat.x());
+          perfData += ",";
+          perfData += String(perfQuat.y());
+          perfData += ",";
+          perfData += String(perfQuat.z());
+          writeStoredQuats(SD,"/PERFECT.txt",perfData);
+//          delay(10);
+          Serial.println("PERFECT QUAT STORED");
+          request->send(200, "text/plain", "OK");
+        });
+
+        server2.on("/storeImperfect", HTTP_GET, [](AsyncWebServerRequest *request){
+//          sensors_event_t orientationData , angVelocityData , linearAccelData, magnetometerData, accelerometerData, gravityData;
+//          bno.getEvent(&orientationData, Adafruit_BNO055::VECTOR_EULER);
+//          bno.getEvent(&linearAccelData, Adafruit_BNO055::VECTOR_LINEARACCEL);
+          
+          imu::Quaternion imperfQuat = bno.getQuat();
+          String imperfData = "";
+          imperfData += String(imperfQuat.w());
+          imperfData += ",";
+          imperfData += String(imperfQuat.x());
+          imperfData += ",";
+          imperfData += String(imperfQuat.y());
+          imperfData += ",";
+          imperfData += String(imperfQuat.z());
+          writeStoredQuats(SD,"/IMPERFECT.txt",imperfData);
+//          delay(10);
+          Serial.println("IMPERFECT QUAT STORED");
+          request->send(200, "text/plain", "OK");
+        });
       
         server2.on("/reset", HTTP_GET, [](AsyncWebServerRequest *request){
           gyroX=0;
@@ -572,12 +653,13 @@ void loop() {
   }
   else if (deviceMode == 2){
     // Blink Control
-    Serial.println("WEBSERVER,VISUALIZATION");
+    
     if (ledOn){
       if (millis() - lastFlash > server2FlashLength){
         digitalWrite(ledPin,LOW);
         lastFlash = millis();
         ledOn = false;
+        Serial.println("WEBSERVER,VISUALIZATION");
       }
     } else {
       if (millis() - lastFlash > server2FlashLength){
@@ -629,16 +711,16 @@ void loop() {
       events.send(getBNOQuats().c_str(),"gyro_readings_quat",millis());
       lastTime = millis();
     }
-    if ((millis() - lastTimeAcc) > accelerometerDelay) {
-      // Send Events to the Web Server with the Sensor Readings
-      events.send(getBNOReadings(&linearAccelData).c_str(),"accelerometer_readings",millis());
-      lastTimeAcc = millis();
-    }
-    if ((millis() - lastTimeTemperature) > temperatureDelay) {
-      // Send Events to the Web Server with the Sensor Readings
-      events.send(getTemperature().c_str(),"temperature_reading",millis());
-      lastTimeTemperature = millis();
-    }
+//    if ((millis() - lastTimeAcc) > accelerometerDelay) {
+//      // Send Events to the Web Server with the Sensor Readings
+//      events.send(getBNOReadings(&linearAccelData).c_str(),"accelerometer_readings",millis());
+//      lastTimeAcc = millis();
+//    }
+//    if ((millis() - lastTimeTemperature) > temperatureDelay) {
+//      // Send Events to the Web Server with the Sensor Readings
+//      events.send(getTemperature().c_str(),"temperature_reading",millis());
+//      lastTimeTemperature = millis();
+//    }
 
     
         
@@ -712,6 +794,17 @@ void writeGpsData(fs::FS &fs, const char * path, String gData){
 
 void writeAccelData(fs::FS &fs, const char * path, String ACCELDATA){
   File file = fs.open(path, FILE_APPEND);
+
+  if(!file){
+    Serial.println("Failed to open file for appending ACCEL");
+    return;
+  }
+  file.println(ACCELDATA);
+  file.close();
+}
+
+void writeStoredQuats(fs::FS &fs, const char * path, String ACCELDATA){
+  File file = fs.open(path, FILE_WRITE);
 
   if(!file){
     Serial.println("Failed to open file for appending ACCEL");

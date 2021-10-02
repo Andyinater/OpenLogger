@@ -354,6 +354,10 @@ function storePerfect(){
 	perfectQuatInv.conjugate();
 	perfectQuatInv.normalize();
 	
+	var xhr = new XMLHttpRequest();
+    xhr.open("GET", "/storePerfect", true);
+    xhr.send();
+	
 }
 
 function storeImperfect(){
@@ -366,6 +370,10 @@ function storeImperfect(){
 	imperfectQuatInv.normalize();
 	
 	resetPosition();
+	
+	var xhr = new XMLHttpRequest();
+    xhr.open("GET", "/storeImperfect", true);
+    xhr.send();
 }
 
 
