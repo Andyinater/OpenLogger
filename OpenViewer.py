@@ -16,8 +16,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import animation
+from matplotlib.pyplot import cm
 import os
 import glob
+import prompt_hack as prompt_hack
 
 def rotate(angle):
     ax.view_init(azim=angle)
@@ -36,7 +38,7 @@ t:     Trim log
 s:     Save changes to log 
 sa:    Save as new log ''')
     
-    
+prompt_hack.start()  
 while(True):
 # Main logic loop
 
@@ -52,7 +54,7 @@ while(True):
     
     
     # get log selection from user
-    logNum = input("Log to analyze:")
+    logNum = prompt_hack.input("Log to analyze:")
     
     # determine action from selection
     if logNum == "exit":
@@ -74,7 +76,7 @@ while(True):
     
     if logDf_raw.iloc[-1][10] != "PreparedByOpenViewer":
         # if log does not contain prepared tag
-        prepLog = input("\nRaw log detected. Press enter to prepare the log:")
+        prepLog = prompt_hack.input("\nRaw log detected. Press enter to prepare the log:")
         if prepLog == "exit":
             break
         
@@ -159,7 +161,7 @@ while(True):
         newData = [float("NaN")]*len(columnNames)
         newData[10] = "PreparedByOpenViewer"
         df.loc[len(df)] = newData
-        exportName = input("\nRaw log has been processed. Name to save processed log under: ")
+        exportName = prompt_hack.input("\nRaw log has been processed. Name to save processed log under: ")
         exportName = exportName + ".txt"
         df.to_csv(exportName, index=False)
     
@@ -170,38 +172,99 @@ while(True):
             # main analysis loop
             
             displayActionMenu()
-            selection = input("Select action:")
+            selection = prompt_hack.input("Select action:")
             if selection == "exit":
                 break
             elif selection == "reset":
                 continue
             
             elif selection == "p2":
+                
+                plotType = prompt_hack.input("\nStyle of plot (default is line): ")
+                
                 print("\nFrom available columns: ")
                 count = 1
                 for c in df.columns:
                     print(str(count) + ". " + c)
                     count += 1
                     
-                xColumn = input("\nX-axis: ")
+                xColumn = prompt_hack.input("\nX-axis: ")
                 if xColumn == "exit":
                     break
                 elif xColumn == "reset":
                     continue
                 
-                yColumn = input("\nY-axis: ")
-                if yColumn == "exit":
-                    break
-                elif yColumn == "reset":
-                    continue        
+                count = 1
+                color = iter(cm.viridis(np.linspace(0,1,6)))
                 
-                plotType = input("\nStyle of plot (default is line): ")
+                fig,host = plt.subplots(figsize=(12,9),dpi=150)
+                lns = []
                 
-                if plotType == "":
-                    plotType = "line"
-                    df.plot(x = df.columns[int(xColumn)-1], y = df.columns[int(yColumn)-1], kind=plotType);
-                elif plotType == "scatter":
-                    df.plot(x = df.columns[int(xColumn)-1], y = df.columns[int(yColumn)-1], kind=plotType,s=5);
+                
+                
+                
+                
+                
+                while(True):
+                    c = np.array([next(color)])
+                    
+                    if count == 1:
+                    
+                        yColumn = prompt_hack.input("\nY" + str(count) + "-axis: ")
+                        if yColumn == "exit" or yColumn == "":
+                            break
+                        elif yColumn == "reset":
+                            continue        
+                        
+                        # host.set_xlim(min(df[df.columns[int(xColumn)-1]]),max(df[df.columns[int(xColumn)-1]]))
+                        # host.set_ylim(min(df[df.columns[int(yColumn)-1]]),max(df[df.columns[int(yColumn)-1]]))
+                        host.set_xlabel(df.columns[int(xColumn)-1])
+                        host.set_ylabel(df.columns[int(yColumn)-1])
+                        
+                        if plotType == "" or plotType == "line":
+                            px, = host.plot(df[df.columns[int(xColumn)-1]], df[df.columns[int(yColumn)-1]], label=df.columns[int(yColumn)-1])
+                            
+                        elif plotType == "scatter":
+                            px = host.scatter(df[df.columns[int(xColumn)-1]], df[df.columns[int(yColumn)-1]], label=df.columns[int(yColumn)-1], color=c[0], s=2)
+                            
+                        host.yaxis.label.set_color(color=c[0])
+                        lns.append(px)
+                            
+                        # ax.scatter(df[df.columns[int(xColumn)-1]], df[df.columns[int(yColumn)-1]], c=c, label=df.columns[int(yColumn)-1], s = 1);
+                        print(df.columns[int(yColumn)-1])
+                            
+                    else:
+                        
+                        yColumn = prompt_hack.input("\nY" + str(count) + "-axis: ")
+                        if yColumn == "exit" or yColumn == "":
+                            break
+                        elif yColumn == "reset":
+                            continue        
+                        par = host.twinx()
+                        # par.set_xlim(min(df[df.columns[int(xColumn)-1]]),max(df[df.columns[int(xColumn)-1]]))
+                        # par.set_ylim(min(df[df.columns[int(yColumn)-1]]),max(df[df.columns[int(yColumn)-1]]))
+                        par.set_xlabel(df.columns[int(xColumn)-1])
+                        par.set_ylabel(df.columns[int(yColumn)-1])
+                        
+                        if plotType == "" or plotType == "line":
+                            px, = par.plot(df[df.columns[int(xColumn)-1]], df[df.columns[int(yColumn)-1]], label=df.columns[int(yColumn)-1])
+                            
+                        elif plotType == "scatter":
+                            px = par.scatter(df[df.columns[int(xColumn)-1]], df[df.columns[int(yColumn)-1]], label=df.columns[int(yColumn)-1], color=c[0], s=2)
+                            
+                        par.yaxis.label.set_color(color=c[0])
+                        par.spines['right'].set_position(('outward', 20+(count-1)*70))
+                        lns.append(px)
+                            
+                        # ax.scatter(df[df.columns[int(xColumn)-1]], df[df.columns[int(yColumn)-1]], c=c, label=df.columns[int(yColumn)-1], s = 1);
+                        print(df.columns[int(yColumn)-1])
+                            
+                            
+                    count += 1
+                
+                plt.ion()
+                host.legend(handles=lns, loc='best')
+                # plt.legend()    
                 plt.show()
                 
             elif selection == "p3" or selection == "p3c":
@@ -210,38 +273,46 @@ while(True):
                     print(str(count) + ". " + c)
                     count += 1
                     
-                xColumn = input("\nX-axis: ")
+                xColumn = prompt_hack.input("\nX-axis: ")
                 if xColumn == "exit":
                     break
                 elif xColumn == "reset":
                     continue
                 
-                yColumn = input("\nY-axis: ")
+                yColumn = prompt_hack.input("\nY-axis: ")
                 if yColumn == "exit":
                     break
                 elif yColumn == "reset":
                     continue
                 
-                zColumn = input("\nZ-axis: ")
+                zColumn = prompt_hack.input("\nZ-axis: ")
                 if zColumn == "exit":
                     break
                 elif zColumn == "reset":
                     continue 
                 
                 if selection == "p3c":
-                    cColumn = input("\nColour Data: ")
+                    cColumn = prompt_hack.input("\nColour Data: ")
                     if zColumn == "exit":
                         break
                     elif zColumn == "reset":
                         continue 
                     else:
+                        plt.ion()
                         fig = plt.figure(figsize=(12, 9),dpi=150)
+                        
+                        plt.show(block=False)
                         ax = Axes3D(fig)
                         ax.scatter(df[df.columns[int(xColumn)-1]], df[df.columns[int(yColumn)-1]], df[df.columns[int(zColumn)-1]], s = 5, c = df[df.columns[int(cColumn)-1]], cmap='coolwarm')
                         ax.set_xlabel(df.columns[int(xColumn)-1])
                         ax.set_ylabel(df.columns[int(yColumn)-1])
                         ax.set_zlabel(df.columns[int(zColumn)-1])
+                        plt.draw()
+                        plt.pause(0.1)
                         plt.show()
+                        # prompt_hack.start()
+                        # root = fig.canvas._tkcanvas.winfo_toplevel()
+                        # root.mainloop()
                 else:
                     fig = plt.figure(figsize=(12, 9),dpi=150)
                     ax = Axes3D(fig)
@@ -251,14 +322,15 @@ while(True):
                     ax.set_zlabel(df.columns[int(zColumn)-1])
                     plt.show()
                 
-                animationSelection = input("\nCreate Animation (y/n) [RESOURCE INTENSIVE]: ")
+                animationSelection = prompt_hack.input("\nCreate Animation (y/n) [RESOURCE INTENSIVE]: ")
+                # prompt_hack.finish()
                 if animationSelection == "exit":
                     break
                 elif animationSelection == "reset":
                     continue  
                 
                 elif animationSelection == "y":
-                    animationName = input("\nName to save animation under: ")
+                    animationName = prompt_hack.input("\nName to save animation under: ")
                     if animationName == "exit":
                         break
                     elif animationName == "reset":
@@ -269,7 +341,7 @@ while(True):
                         rot_animation.save('animations/' + animationName + '.gif', dpi=80, writer='imagemagick')
                         
             elif selection == "nc":
-                newColumnName = input("\nNew column name: ")
+                newColumnName = prompt_hack.input("\nNew column name: ")
                 if newColumnName == "exit":
                     break
                 elif newColumnName == "reset":
@@ -278,7 +350,7 @@ while(True):
                 for c in df.columns:
                     print(c)
                 
-                newColumnExpression = input("\nNew column expression: ")
+                newColumnExpression = prompt_hack.input("\nNew column expression: ")
                 if newColumnExpression == "exit":
                     break
                 
@@ -307,7 +379,7 @@ while(True):
             elif selection == "r":
                 for c in df.columns:
                     print(c)
-                renamePair = input("\nRename column by inputting oldName,newName.\noldName,newName = ")
+                renamePair = prompt_hack.input("\nRename column by prompt_hack.inputting oldName,newName.\noldName,newName = ")
                 if renamePair == "exit":
                     break
                 elif renamePair == "reset":
@@ -326,28 +398,28 @@ while(True):
                     print(str(count) + ". " + c)
                     count += 1
                     
-                delColumn = input("\nColumn to remove: ")
+                delColumn = prompt_hack.input("\nColumn to remove: ")
                 if delColumn == "exit":
                     break
                 elif delColumn == "reset":
                     continue
                 else:
                     delColumn = int(delColumn)
-                    rusure = input("\nWARNING:This action is permanent. Delete '" + df.columns[delColumn-1] + "' column? (y/n): ")
+                    rusure = prompt_hack.input("\nWARNING:This action is permanent. Delete '" + df.columns[delColumn-1] + "' column? (y/n): ")
                     if rusure == "y":
                         df.drop(df.columns[delColumn-1], inplace=True, axis=1)
             
             elif selection == "s":
                 if df.iloc[-1][10] != "PreparedByOpenViewer":
                     newData = [float("NaN")]*len(df.iloc[-1])
-                    newData[9] = "PreparedByOpenViewer"
-                    df.loc[len(df)] = newData
+                    newData[10] = "PreparedByOpenViewer"
+                    df.loc[-1] = newData
                     
                 df.to_csv(fileName, index = False)
                 print("\n" + fileName + " updated!")
                 
             elif selection == "sa":
-                exportName = input("\nName to save new log under: ")
+                exportName = prompt_hack.input("\nName to save new log under: ")
                 if exportName == "exit":
                     break
                 elif exportName == "reset":
@@ -356,14 +428,14 @@ while(True):
                 if df.iloc[-1][10] != "PreparedByOpenViewer":
                     newData = [float("NaN")]*len(df.iloc[-1])
                     newData[10] = "PreparedByOpenViewer"
-                    df.loc[len(df)] = newData
+                    df.loc[-1] = newData
                 
                 exportName = exportName + ".txt"
                 fileName = exportName
                 df.to_csv(exportName, index=False)
                 
             elif selection == "t":
-                keepOrRemove = input("\nkeep ('k') or remove ('r'):") 
+                keepOrRemove = prompt_hack.input("\nkeep ('k') or remove ('r'):") 
                 if keepOrRemove == "exit":
                     break
                 elif keepOrRemove == "reset":
@@ -374,7 +446,7 @@ while(True):
                     print(str(count) + ". " + c)
                     count += 1
                 
-                columnSelection = input("\nBasis column:")
+                columnSelection = prompt_hack.input("\nBasis column:")
                 if columnSelection == "exit":
                     break
                 elif columnSelection == "reset":
@@ -384,7 +456,7 @@ while(True):
                 print("\nBasis column has bounds (" + str(min(basisColumn)) + "," + str(max(basisColumn)) + ")")
                 
                 if keepOrRemove == "k":
-                    uInterval = input("\nKeep datapoints having basis values in interval (x,y)\n(x,y): ")
+                    uInterval = prompt_hack.input("\nKeep datapoints having basis values in interval (x,y)\n(x,y): ")
                     if uInterval == "exit":
                         break
                     elif uInterval == "reset":
@@ -396,7 +468,7 @@ while(True):
                     df = df[df[df.columns[int(columnSelection)-1]].between(lower,upper)]
                     
                 if keepOrRemove == "r":
-                    uInterval = input("\nRemove datapoints having basis values in interval (x,y)\n(x,y): ")
+                    uInterval = prompt_hack.input("\nRemove datapoints having basis values in interval (x,y)\n(x,y): ")
                     if uInterval == "exit":
                         break
                     elif uInterval == "reset":
