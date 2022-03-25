@@ -74,7 +74,7 @@ while(True):
         print("\n" + str(logNum) + " is out of range. Must select a log between 1 and " + str(count) + "\n")
         continue
     
-    if logDf_raw.iloc[-1][10] != "PreparedByOpenViewer":
+    if logDf_raw.iloc[-1][13] != "PreparedByOpenViewer":
         # if log does not contain prepared tag
         prepLog = prompt_hack.input("\nRaw log detected. Press enter to prepare the log:")
         if prepLog == "exit":
@@ -159,7 +159,7 @@ while(True):
             
         # usea unique identifier for processed logs    
         newData = [float("NaN")]*len(columnNames)
-        newData[10] = "PreparedByOpenViewer"
+        newData[13] = "PreparedByOpenViewer"
         df.loc[len(df)] = newData
         exportName = prompt_hack.input("\nRaw log has been processed. Name to save processed log under: ")
         exportName = exportName + ".txt"
