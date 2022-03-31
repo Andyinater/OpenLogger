@@ -11,6 +11,12 @@
 # x/y/z === rl/fb/ud
 # r/p
 
+
+# CAPSTONE
+# roll = gy
+# pitch = gx
+# yaw = gz
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -427,7 +433,7 @@ while(True):
                 
                 if df.iloc[-1][10] != "PreparedByOpenViewer":
                     newData = [float("NaN")]*len(df.iloc[-1])
-                    newData[10] = "PreparedByOpenViewer"
+                    newData[13] = "PreparedByOpenViewer"
                     df.loc[-1] = newData
                 
                 exportName = exportName + ".txt"
