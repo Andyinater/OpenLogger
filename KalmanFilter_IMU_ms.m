@@ -1,7 +1,7 @@
 % Define Simulation Parameters
-dt = 0.01;
-NoiseGain_r = 0.0;
-NoiseGain_ay = 0.0;
+dt = 0.02;
+NoiseGain_r = 1;
+NoiseGain_ay = 20;
 CovarShape = [1 0; 0 1];
 
 % Define Vehicle Parameters
@@ -29,7 +29,7 @@ X_0 = [0;0];
 P_0 = 1*CovarShape;
 
 %Process error matrix
-Q = 0.000001*CovarShape;
+Q = 0.01*CovarShape;
 
 %Observation error matrix
 R = 0.01*CovarShape;
@@ -41,9 +41,9 @@ A_GT = [-(cf+cr)/((m+E_m)*(u+E_u)) -(u+E_u)-(a*cf-b*cr)/((m+E_m)*(u+E_u));
 B_GT = [cf/(m+E_m); a*cf/(I+E_I)];
 
 % Outputs IMU measures r and ay
-% ay + v_dot + ru
+% ay = v_dot + ru
 C_GT = [0 1;
-        A_GT(1,1) A_GT(1,2)+(u+E_u)];
+        A_GT(1,1) A_GT(1,2)+(u+E_u)]; %[r;ay]
 
 % v_dot contribution from U
 D_GT = [0; 
@@ -67,6 +67,7 @@ D = [0;
 % Create continuous and discretized systems
 sys = ss(A_GT,B_GT,C_GT,D_GT); % outputs IMU measurements for pseudo-measurements [r;ay]
 sys_states = ss(A_GT,B_GT,[1 0;0 1],[0;0]); % Outputs system state [v;r]
+sys_dots = ss(A_GT,B_GT,A_GT,B_GT)
 ksys = ss(A,B,C,D); % Outputs states [v;r]
 sysD = c2d(ksys,dt); 
 Adt = sysD.A;
@@ -132,13 +133,13 @@ for i = 1:size(U,2) % For every input
     % v_dot = A11*v + A12*r + B11*u
     % v = (v_dot - A12*r - B11*u)/(A11)
     % v = (ay - ru - A12*r - B11*U)/A11
-    v_measured = (y2n(i,2) - y2n(i,1)*u - Adt(1,2)*y2n(i,1) - Bdt(1,1)*U(i))/Adt(1,1);
+    v_measured = (y2n(i,2) - y2n(i,1)*u - A_GT(1,2)*y2n(i,1) - B_GT(1,1)*U(i))/A_GT(1,1);
     
     X_k1 = X_kp1 + K*([v_measured;y2n(i,1)] - Cdt*X_kp1); % [v;r]measured - [v;r]extrapolated
     K_Xs(i,:) = X_k1;
     
     %         r             A11*v        A12*r                B11*U     r*u
-    Y_k1 = [X_k1(2); Adt(1,1)*X_k1(1) + Adt(1,2)*X_k1(2) + Bdt(1)*U(i) + X_k1(2)*u]; % from corrected state determine kalman predicted measurement [r;ay]
+    Y_k1 = [X_k1(2); A_GT(1,1)*X_k1(1) + A_GT(1,2)*X_k1(2) + B_GT(1)*U(i) + X_k1(2)*u]; % from corrected state determine kalman predicted measurement [r;ay]
     K_preds(i,:) = transpose(Y_k1); % [r;ay]
     k_pDot = Adt*X_k1 + Bdt*U(i);% Kalman prediction of state change
     K_dots(i,:) = transpose(k_pDot);
