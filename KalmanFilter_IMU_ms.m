@@ -7,13 +7,15 @@ CovarShape = [1 0; 0 1];
 % Define Vehicle Parameters
 cf = 80000;
 cr = 80000;
-I = 2114;
+I = 2514;
 E_I = 0; % optional parameter error
-b = 1.041;
-a = 1.628;
-m = 1251;
+wb = 2.820;
+fwf = 0.561;
+b = wb*fwf;
+a = wb-b;
+m = 1900;
 E_m = 0; % optional parameter error
-u = 10;
+u = 11;
 E_u = 0; % optional parameter error
 
 
